@@ -7,14 +7,15 @@ import (
 	"syscall"
 )
 
-func htons(i uint16) uint16 {
+func htons(i int) int {
 	return (i<<8)&0xff00 | i>>8
 }
 
 func main() {
 	///////////////////////////////////////////////////////////////////////////////////////
 	// common
-	proto := htons(syscall.ETH_P_ALL)
+	const proto = (syscall.ETH_P_ALL<<8)&0xff00 | syscall.ETH_P_ALL>>8
+	// proto := htons(syscall.ETH_P_ALL)
 	buffer := make([]byte, 1500)
 
 	///////////////////////////////////////////////////////////////////////////////////////
@@ -59,9 +60,11 @@ func main() {
 		log.Fatal("interfacebyname: ", err)
 	}
 
+	// var haddr [8]byte
+	// copy(haddr[0:7], recvIf.HardwareAddr[0:7])
 	sendSll := syscall.SockaddrLinklayer{
 		Protocol: proto,
-		Ifindex:  recvIf.Index,
+		Ifindex:  sendIf.Index,
 		// Halen:    uint8(len(recvIf.HardwareAddr)),
 		// Addr:     haddr,
 	}
@@ -71,17 +74,26 @@ func main() {
 
 	///////////////////////////////////////////////////////////////////////////////////////
 	// main loop
+	fmt.Println("Starting raw server...")
 	for {
 		n, addr, err := syscall.Recvfrom(recvSockFd, buffer, 0)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		// FOR DEBUG
-		a := addr.(*syscall.SockaddrInet4)
-		fmt.Printf("Found peer %v.%v.%v.%v:%v\n", a.Addr[0], a.Addr[1], a.Addr[2], a.Addr[3], a.Port)
+		// a := addr.(*syscall.SockaddrInet4)
+		// fmt.Printf("Found peer %v.%v.%v.%v:%v\n", a.Addr[0], a.Addr[1], a.Addr[2], a.Addr[3], a.Port)
+		sa, _ := addr.(*syscall.SockaddrLinklayer)
+		fmt.Printf("Recv SockaddrLinklayer: %+v\n", sa)
+
+		fmt.Printf("Recv: %v\n", buffer[:n])
 
 		go func() {
-			err = syscall.Sendto(sendSockFd, buffer[:n], 0, &sendSll)
+			// err = syscall.Sendto(sendSockFd, buffer[:n], 0, &sendSll)
+			err := syscall.Sendto(sendSockFd, buffer[:n], 0, &syscall.SockaddrLinklayer{
+				Protocol: proto,
+				Ifindex:  sendIf.Index,
+			})
 			if err != nil {
 				log.Fatalln(err)
 			}

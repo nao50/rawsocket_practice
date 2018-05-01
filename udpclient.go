@@ -5,8 +5,8 @@ import (
 )
 
 func main() {
-	req := []byte("test1")
-	conn, err := net.Dial("udp4", "localhost:2123")
+	req := []byte("test012345")
+	conn, err := net.Dial("udp4", "localhost:2152")
 	if err != nil {
 		panic(err)
 	}
