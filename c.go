@@ -46,7 +46,7 @@ func main() {
 
 	addr := syscall.SockaddrInet4{
 		Port: 0,
-		Addr: [4]byte{127, 0, 0, 2},
+		Addr: [4]byte{127, 0, 0, 1},
 	}
 
 	// p := pkt()
